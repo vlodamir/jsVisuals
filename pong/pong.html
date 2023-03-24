@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Pong Game</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <script>
+        // Game Variables
+        var canvas = document.getElementById("canvas");
+        var ctx = canvas.getContext("2d");
+
+        var ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            dx: 2,
+            dy: -2,
+            radius: 10
+        };
+
+        var paddle1 = {
+            x: 0,
+            y: canvas.height / 2 - 50,
+            width: 10,
+            height: 100,
+            score: 0
+        };
+
+        var paddle2 = {
+            x: canvas.width - 10,
+            y: canvas.height / 2 - 50,
+            previousY: 0,
+            width: 10,
+            height: 100,
+            score: 0
+        };
+
+        // Create AudioContext and oscillator nodes for chimes
+        var audioContext = new AudioContext();
+        var paddleChime = audioContext.createOscillator();
+        paddleChime.type = 'sine'; // Use a sine wave for a pure tone
+        paddleChime.connect(audioContext.destination);
+
+        var wallChime = audioContext.createOscillator();
+        wallChime.type = 'sine'; // Use a sine wave for a pure tone
+        wallChime.connect(audioContext.destination);
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle(paddle) {
+            ctx.beginPath();
+            ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawScores() {
+            ctx.font = "16px Arial";
+            ctx.fillStyle = "#0095DD";
+            ctx.fillText("Player 1: " + paddle1.score, 10, 20);
+            ctx.fillText("Player 2: " + paddle2.score, canvas.width - 90, 20);
+        }
+
+        function collisionDetection() {
+            // Ball collision with paddle1
+            if (ball.x - ball.radius < paddle1.x + paddle1.width &&
+                ball.y > paddle1.y &&
+                ball.y < paddle1.y + paddle1.height) {
+                ball.dx = -ball.dx;
+
+                // Play chime sound
+                var paddleChime = audioContext.createOscillator();
+                paddleChime.type = 'sine'; // Use a sine wave for a pure tone
+                paddleChime.connect(audioContext.destination);
+                paddleChime.frequency.setValueAtTime(440, audioContext.currentTime);
+                paddleChime.start();
+                paddleChime.stop(audioContext.currentTime + 0.1);
+                paddleChime.onended = function () {
+                    paddleChime.disconnect();
+                }
+            }
+
+            // Ball collision with paddle2
+            if (ball.x + ball.radius > paddle2.x &&
+                ball.y > paddle2.y &&
+                ball.y < paddle2.y + paddle2.height) {
+                ball.dx = -ball.dx;
+
+                // Play chime sound
+                var paddleChime = audioContext.createOscillator();
+                paddleChime.type = 'sine'; // Use a sine wave for a pure tone
+                paddleChime.connect(audioContext.destination);
+                paddleChime.frequency.setValueAtTime(440, audioContext.currentTime);
+                paddleChime.start();
+                paddleChime.stop(audioContext.currentTime + 0.1);
+                paddleChime.onended = function () {
+                    paddleChime.disconnect();
+                }
+            }
+
+            // Ball collision with top and bottom walls
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+                ball.dy = -ball.dy;
+
+                // Play lower-pitched chime sound
+                var wallChime = audioContext.createOscillator();
+                wallChime.type = 'sine'; // Use a sine wave for a pure tone
+                wallChime.connect(audioContext.destination);
+                wallChime.frequency.setValueAtTime(220, audioContext.currentTime);
+                wallChime.start();
+                wallChime.stop(audioContext.currentTime + 0.1);
+                wallChime.onended = function () {
+                    wallChime.disconnect();
+                }
+            }
+
+            // Ball collision with left and right walls
+            if (ball.x - ball.radius < 0) {
+                paddle2.score++;
+                resetBall();
+            } else if (ball.x + ball.radius > canvas.width) {
+                paddle1.score++;
+                resetBall();
+            }
+        }
+
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = -ball.dx;
+            ball.dy = -ball.dy;
+        }
+
+        function movePaddle1() {
+            var center = paddle1.y + paddle1.height / 2;
+            if (center < ball.y - 35) {
+                paddle1.y += 5;
+            } else if (center > ball.y + 35) {
+                paddle1.y -= 5;
+            }
+
+            // Prevent paddle from going off screen
+            if (paddle1.y < 0) {
+                paddle1.y = 0;
+            }
+            if (paddle1.y + paddle1.height > canvas.height) {
+                paddle1.y = canvas.height - paddle1.height;
+            }
+        }
+
+        // function movePaddle2() {
+        //     var center = paddle2.y + paddle2.height / 2;
+        //     if (center < ball.y - 35) {
+        //         paddle2.y += 5;
+        //     } else if (center > ball.y + 35) {
+        //         paddle2.y -= 5;
+        //     }
+
+        //     // Prevent paddle from going off screen
+        //     if (paddle2.y < 0) {
+        //         paddle2.y = 0;
+        //     }
+        //     if (paddle2.y + paddle2.height > canvas.height) {
+        //         paddle2.y = canvas.height - paddle2.height;
+        //     }
+        // }
+
+        function movePaddle2(event) {
+            // Move paddle based on mouse position
+            var rect = canvas.getBoundingClientRect();
+            var mouseY = event.clientY - rect.top - paddle2.height / 2;
+
+            // Prevent paddle from going off screen
+            if (mouseY < 0) {
+                paddle2.y = 0;
+            } else if (mouseY + paddle2.height > canvas.height) {
+                paddle2.y = canvas.height - paddle2.height;
+            } else {
+                paddle2.y = mouseY;
+                previousY = mouseY;
+            }
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBall();
+            drawPaddle(paddle1);
+            drawPaddle(paddle2);
+            drawScores();
+            collisionDetection(audioContext, paddleChime, wallChime);
+
+            // Update ball position
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            movePaddle1();
+            //movePaddle2();
+        }
+
+
+        document.addEventListener('mousemove', movePaddle2);
+
+        // // Event listeners
+        // document.addEventListener("keydown", function (event) {
+        //     if (event.keyCode == 38) { // Up arrow key
+        //         paddle2.y -= 20;
+        //     }
+        //     if (event.keyCode == 40) { // Down arrow key
+        //         paddle2.y += 20;
+        //     }
+
+        //     // Prevent paddle from going off screen
+        //     if (paddle2.y < 0) {
+        //         paddle2.y = 0;
+        //     }
+        //     if (paddle2.y + paddle2.height > canvas.height) {
+        //         paddle2.y = canvas.height - paddle2.height;
+        //     }
+        // });
+
+        // Start the game loop
+        setInterval(gameLoop, 10);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bouncing Ball with Tail Animation</title>
+	<style>
+		canvas {
+			background-color: black;
+			display: block;
+			margin: auto;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+
+	<script>
+		var canvas = document.getElementById("canvas");
+		var ctx = canvas.getContext("2d");
+
+		// Set canvas size
+		canvas.width = window.innerWidth;
+		canvas.height = window.innerHeight;
+
+		// Ball properties
+		var balls = [];
+		balls.push({
+			x: canvas.width / 2,
+			y: canvas.height / 2,
+			radius: 20,
+			speedX: 20,
+			speedY: 5,
+			gravity: 0.5,
+			trailLength: 50,
+			trail: []
+		});
+
+		// Update and draw balls
+		function draw() {
+			// Clear canvas
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+			// Loop through balls
+			for (var i = 0; i < balls.length; i++) {
+				var ball = balls[i];
+				//var ballColor = "#" + Math.floor(Math.random()*16777215).toString(16);
+				
+
+				// Move ball
+				ball.speedY += ball.gravity;
+				ball.x += ball.speedX;
+				ball.y += ball.speedY;
+				
+				ball.color = "white";
+
+				// Bounce ball off edges
+				if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+					ball.speedX = -ball.speedX;
+				}
+				if (ball.y + ball.radius > canvas.height) {
+					ball.y = canvas.height - ball.radius;
+					ball.speedY = -ball.speedY * 1;
+					
+					if(balls.length < 40){
+					// Create new ball
+					balls.push({
+						x: ball.x,
+						y: ball.y,
+						radius: ball.radius * 0.8,
+						speedX: -ball.speedX * 0.9,
+						speedY: Math.random() * -50,
+						gravity: ball.gravity,
+						trailLength: ball.trailLength,
+						trail: [],
+						color: "#" + Math.floor(Math.random()*16777215).toString(16)
+					});
+					}
+				}
+				if (ball.y - ball.radius < 0) {
+					ball.y = ball.radius;
+					ball.speedY = -ball.speedY * 0.8;
+				}
+
+				// Add trail point
+				ball.trail.push({x: ball.x, y: ball.y});
+				if (ball.trail.length > ball.trailLength) {
+					ball.trail.shift();
+				}
+
+				// Draw trail
+				for (var j = 0; j < ball.trail.length; j++) {
+					var trailAlpha = 1 - (j / ball.trail.length);
+					ctx.fillStyle = "rgba(255, 255, 255, " + trailAlpha + ")";
+					ctx.beginPath();
+					ctx.arc(ball.trail[j].x, ball.trail[j].y, ball.radius * (j / ball.trail.length), 0, 2 * Math.PI);
+					ctx.fill();
+				}
+
+				// Draw ball
+				ctx.fillStyle = ball.color;
+				ctx.beginPath();
+				ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
+				ctx.fill();
+			}
+
+						// Remove balls that have left the screen
+			for (var k = 0; k < balls.length; k++) {
+				if (balls[k].x + balls[k].radius < 0 || balls[k].x - balls[k].radius > canvas.width) {
+					balls.splice(k, 1);
+					k--;
+				}
+			}
+		}
+
+		// Run animation
+		setInterval(function() {
+			draw();
+		}, 30);
+	</script>
+</body>
+</html>

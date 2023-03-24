@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Lightning Storm Animation</title>
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+			padding: 0;
+			background-color: black;
+		}
+
+		canvas {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+	</style>
+	 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+
+
+	<script>
+	
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+
+
+// Invisible bounding box
+const boundThickness = 1;
+const boundSize = new CANNON.Vec3(20, 20, 20); // Increase boundSize values
+const boundHalfExtents = boundSize.clone().scale(0.5, boundSize).vsub(new CANNON.Vec3(boundThickness, boundThickness, boundThickness));
+
+
+function createBound(position, quaternion) {
+  const boundShape = new CANNON.Box(boundHalfExtents);
+  const boundBody = new CANNON.Body({ mass: 0, shape: boundShape });
+  boundBody.position.copy(position);
+  boundBody.quaternion.copy(quaternion);
+  world.addBody(boundBody);
+}
+
+
+
+
+
+const geometry = new THREE.BoxGeometry();
+const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+const cube = new THREE.Mesh(geometry, material);
+scene.add(cube);
+
+// Add black edges to the cube
+const edgesGeometry = new THREE.EdgesGeometry(cube.geometry);
+const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+const cubeEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+cube.add(cubeEdges);
+
+camera.position.z = 5;
+
+const world = new CANNON.World();
+world.gravity.set(0, -9.82, 0);
+world.broadphase = new CANNON.NaiveBroadphase();
+world.solver.iterations = 10;
+
+const cubeShape = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 0.5));
+const cubeBody = new CANNON.Body({ mass: 1, shape: cubeShape });
+cubeBody.position.set(0, 1, 0);
+world.addBody(cubeBody);
+
+
+const groundShape = new CANNON.Plane();
+const groundBody = new CANNON.Body({ mass: 0, shape: groundShape });
+groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
+world.addBody(groundBody);
+
+
+
+
+// Create the six boundaries
+//createBound(new CANNON.Vec3(0, 0, -boundSize.z * 0.5), new CANNON.Quaternion());
+//createBound(new CANNON.Vec3(0, 0, boundSize.z * 0.5), new CANNON.Quaternion());
+//createBound(new CANNON.Vec3(-boundSize.x * 0.5, 0, 0), new CANNON.Quaternion(0, 0, 0, 1).setFromEuler(0, 0, Math.PI * 0.5));
+//createBound(new CANNON.Vec3(boundSize.x * 0.5, 0, 0), new CANNON.Quaternion(0, 0, 0, 1).setFromEuler(0, 0, Math.PI * 0.5));
+//createBound(new CANNON.Vec3(0, -boundSize.y * 0.5, 0), new CANNON.Quaternion(0, 0, 0, 1).setFromEuler(Math.PI * 0.5, 0, 0));
+//createBound(new CANNON.Vec3(0, boundSize.y * 0.5, 0), new CANNON.Quaternion(0, 0, 0, 1).setFromEuler(Math.PI * 0.5, 0, 0));
+
+
+const clock = new THREE.Clock();
+
+
+camera.position.z = 15;
+
+
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const deltaTime = clock.getDelta();
+  world.step(deltaTime);
+
+  cube.position.copy(cubeBody.position);
+  cube.quaternion.copy(cubeBody.quaternion);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+document.addEventListener('keyup', (event) => {
+  if (event.code === 'ArrowDown') {
+    const randomDirection = new CANNON.Vec3(Math.random() * 2 - 1, Math.random() * 2 - 1, Math.random() * 2 - 1);
+    randomDirection.normalize();
+    randomDirection.scale(10, randomDirection);
+    cubeBody.velocity.set(randomDirection.x / 2, randomDirection.y, randomDirection.z);
+  }
+});
+
+
+	</script>
+</body>
+</html>

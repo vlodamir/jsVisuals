@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Black Hole Particle Animation</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+      const renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const geometry = new THREE.SphereGeometry(1, 32, 32);
+      const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const blackHole = new THREE.Mesh(geometry, material);
+      scene.add(blackHole);
+
+      const particleMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 });
+      const particleCount = 1000;
+      const particleInnerRadius = 3;
+      const particleOuterRadius = 7;
+      const discHeight = 0.2;
+      const particles = new THREE.BufferGeometry();
+      const vertices = new Float32Array(particleCount * 3);
+
+      for (let i = 0; i < particleCount; i++) {
+        const angle = 2 * Math.PI * Math.random();
+        const distance = particleInnerRadius + Math.random() * (particleOuterRadius - particleInnerRadius);
+        const x = distance * Math.cos(angle);
+        const y = distance * Math.sin(angle);
+        const z = (Math.random() - 0.5) * discHeight;
+
+        vertices[i * 3] = x;
+        vertices[i * 3 + 1] = y;
+        vertices[i * 3 + 2] = z;
+      }
+
+      particles.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+      const particleSystem = new THREE.Points(particles, particleMaterial);
+      scene.add(particleSystem);
+
+      camera.position.z = 15;
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        particleSystem.rotation.y += 0.001;
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>

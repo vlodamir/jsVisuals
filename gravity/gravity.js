@@ -1,0 +1,127 @@
+// Set up the scene, camera, and renderer
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const mainSphereMaterial = new THREE.MeshPhongMaterial({
+  color: 0xffffff,
+  emissive: 0xffffff,
+  emissiveIntensity: 5
+});
+
+// Create the main sphere
+const mainSphereGeometry = new THREE.SphereGeometry(2, 32, 32);
+//const mainSphereMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xffffff });
+const mainSphere = new THREE.Mesh(mainSphereGeometry, mainSphereMaterial);
+scene.add(mainSphere);
+
+//const renderScene = new THREE.RenderPass(scene, camera);
+// const bloomPass = new THREE.UnrealBloomPass(
+//   new THREE.Vector2(window.innerWidth, window.innerHeight),
+//   1.5,
+//   0.4,
+//   0.85
+// );
+// bloomPass.threshold = 0.1;
+// bloomPass.strength = 1.5;
+// bloomPass.radius = 0.4;
+
+// const composer = new THREE.EffectComposer(renderer);
+// composer.addPass(renderScene);
+// composer.addPass(bloomPass);
+
+// Add a point light at the main sphere position
+const sunLight = new THREE.PointLight(0xffffff, 1, 100);
+sunLight.position.copy(mainSphere.position);
+scene.add(sunLight);
+
+// Create the comets
+const numComets = 10000;
+const cometGeometries = new Array(numComets).fill(null).map(() => new THREE.SphereGeometry(0.3, 4, 4));
+const cometMaterials = new Array(numComets).fill(null).map(() => new THREE.MeshBasicMaterial({ color: 0xffffff }));
+const comets = cometGeometries.map((geometry, index) => {
+  const comet = new THREE.Mesh(geometry, cometMaterials[index]);
+  scene.add(comet);
+  return comet;
+});
+
+//Set the camera focal lengt
+camera.setFocalLength(5);
+
+//Set the camera position
+camera.position.z = 60;
+camera.position.y = 20;
+//camera.rotation.x = -1;
+
+//Set the camera rotation
+camera.rotation.x = -0.5;
+camera.rotation.z = -0.2;
+
+// Function to generate a random number between min and max
+function randomBetween(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+// Initial positions and velocities of the comets
+const cometInitialPositions = new Array(numComets).fill(null).map(() => {
+  return new THREE.Vector3(
+    randomBetween(20, 100),
+    randomBetween(0, 0),
+    randomBetween(-10, -20)
+  );
+});
+const cometInitialVelocities = new Array(numComets).fill(null).map(() => {
+  return new THREE.Vector3(
+    randomBetween(0, 0),
+    randomBetween(0, 0),
+    randomBetween(-0.2, -0.1)
+  );
+});
+
+comets.forEach((comet, index) => {
+  comet.position.copy(cometInitialPositions[index]);
+});
+
+// Adjusted gravitational constant, main sphere mass, and comet mass
+const G = 3.67430e-2;
+const mainSphereMass = 1e2;
+const cometMass = 1e-1;
+
+// Time step for the simulation
+const dt = 0.87;
+
+// Update the comets' positions and velocities using gravitational force
+function updateCometPositions() {
+  comets.forEach((comet, index) => {
+    const distanceToMainSphere = comet.position.clone().sub(mainSphere.position);
+    const distanceSquared = distanceToMainSphere.lengthSq();
+    const forceMagnitude = G * mainSphereMass * cometMass / distanceSquared;
+
+    const forceDirection = distanceToMainSphere.normalize().negate();
+    const force = forceDirection.multiplyScalar(forceMagnitude);
+
+    const acceleration = force.clone().multiplyScalar(dt / cometMass);
+    cometInitialVelocities[index].add(acceleration);
+    comet.position.addScaledVector(cometInitialVelocities[index], dt);
+  });
+}
+
+// Animation loop
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Rotate the main sphere
+  mainSphere.rotation.x += 0.01;
+  mainSphere.rotation.y += 0.01;
+
+  // Update the comets' positions using gravitational force
+  updateCometPositions();
+
+  renderer.render(scene, camera);
+
+  //composer.render();
+}
+
+animate();
