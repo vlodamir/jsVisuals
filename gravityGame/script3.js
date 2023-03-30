@@ -17,7 +17,6 @@ const bigSphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 const bigSphere = new THREE.Mesh(bigSphereGeometry, bigSphereMaterial);
 scene.add(bigSphere);
 
-
 const smallSpheresNumber = 3000;
 
 // Create an array to hold the small spheres
